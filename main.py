@@ -2,16 +2,14 @@ from flask import Flask,render_template, request
 import pyiqfeed as iq
 import datetime
 import time
-
-
-
-
+import numpy as np
+ 
 
 app = Flask(__name__)
 
 def getStockData(ticker: str, seconds: int):
 	"""Get level 1 quotes and trades for ticker for seconds seconds."""
-
+	fundamentals = ""
 	quote_conn = iq.QuoteConn(name="pyiqfeed-Example-lvl1")
 	quote_listener = iq.VerboseQuoteListener("Level 1 Listener")
 	quote_conn.add_listener(quote_listener)
@@ -21,9 +19,15 @@ def getStockData(ticker: str, seconds: int):
 		quote_conn.watch(ticker)
 		time.sleep(seconds)
 		quote_conn.unwatch(ticker)
+		fundamentals = quote_conn.fundamentals
+		summary = quote_conn.summary
+		print(summary)
 		quote_conn.remove_listener(quote_listener)
+		summary = summary[0]
+	return "Ticker: " + str(summary[0]) + " Bid: " + str(summary[1]) + " Ask: " + str(summary[3])
 
 def getOptionData(ticker: str):
+	toreturn = ""
 	lookup_conn = iq.LookupConn(name="pyiqfeed-Example-Eq-Option-Chain")
 	lookup_listener = iq.VerboseIQFeedListener("EqOptionListener")
 	lookup_conn.add_listener(lookup_listener)
@@ -39,29 +43,31 @@ def getOptionData(ticker: str):
 			#print("Currently trading options for %s" % ticker)
 			#print(e_opt)
 		lookup_conn.remove_listener(lookup_listener)
-	return ticker
+		toreturn = str(e_opt)
+	return toreturn
 
 #def getFuturesData(ticker: str):
 
-def getTestData(ticker: str):
-	return "Ticker: " + ticker
+def getTestData(ticker: str, tickertype: str):
+	return "Ticker: " + ticker + "<br>" + "Ticker type: " + tickertype
 
 
 @app.route('/getdata', methods=['GET', 'POST'])
 def getData():
 	if request.method == 'POST':
 	 	ticker = request.form['ticker']
-	# 	tickertype = request.form['tickertype']
-	# 	if (tickertype == "Stocks"):
-	# 		data = ""
-	# 	elif (tickertype == "Options"):
-	# 		data = getOptionData(ticker)
-	# 	elif (tickertype == "Futures"):
-	# 		data = ""
-	# 	elif (tickertype == "Test"):
-	# 		data = getTestData(ticker)
-	# 	return data
-	return get(ticker)
+	 	tickertype = request.form['tickertype']
+
+	 	if (tickertype == "Stocks"):
+	 		summary = getStockData(ticker,.5)
+	 		return "Return<br>" + summary
+	 	elif (tickertype == "Options"):
+	 		data = getOptionData(ticker)
+	 	elif (tickertype == "Futures"):
+	 		data = ""
+	 	elif (tickertype == "Test"):
+	 		data = getTestData(ticker)
+	 	return data
 
 
 @app.route('/')

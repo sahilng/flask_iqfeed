@@ -3,44 +3,37 @@
 <html>
 
 	<head>
-		<!--script>
-			import Handsontable from "handsontable";
-			import 'handsontable/dist/handsontable.full.css';
-		</script-->
 		<script type=text/javascript src="{{url_for('static', filename='jquery-3.6.0.min.js')}}"></script>
+		<link href="{{url_for('static', filename='styles.css')}}" rel="stylesheet">
+ 		<script src="https://cdn.jsdelivr.net/npm/handsontable@8.3.2/dist/handsontable.full.min.js"></script>
+		<link href="https://cdn.jsdelivr.net/npm/handsontable@8.3.2/dist/handsontable.full.min.css" rel="stylesheet" media="screen">
 	</head>
 
 	<body>
-
+		<div id="control">
+			<form id="controlform">
+				<input id="ticker" name="ticker" type="text" placeholder="Ticker">
+				<select id="tickertype" name="tickertype">
+					<option value="Stocks">Stocks</option>
+					<option value="Options">Options</option>
+					<option value="Futures">Futures</option>
+				</select>
+				<input id="controlformsubmit" type="button" value="Go">
+			</form>
+		</div>
 		<div id = "data"></div>	
 
 		<script>
-			$.ajax({
+			$("#controlformsubmit").click(function(){
+				$.ajax({
 				type: "POST",
 				url: "/getdata",
-				data: {ticker: "SPY", tickertype: "Test"},
+				data: $("#controlform").serialize(),
 				success: function(data){
 					$("#data").html(data);
-				}
+					}
+				})
 			});
-			/*setInterval(function() {
-				$.ajax({
-			      type: "POST",
-			      url: "/getdata",
-			      data: {ticker: "SPY", tickertype: "Test"}
-			    })
-			      .done(function(data) {
-			      	document.getElementById('data').innerHTML = data;
-			        var container = document.getElementById('data');
-					var hot = new Handsontable(container, {
-					  data: data,
-					  rowHeaders: true,
-					  colHeaders: true,
-					  filters: true,
-					  dropdownMenu: true
-					});
-			      });
-			}, 1000);*/
 		</script>
 	</body>
 
