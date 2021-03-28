@@ -23,8 +23,12 @@ def getStockData(ticker: str, seconds: int):
 		summary = quote_conn.summary
 		print(summary)
 		quote_conn.remove_listener(quote_listener)
-		summary = summary[0]
-	return "Ticker: " + str(summary[0]) + " Bid: " + str(summary[1]) + " Ask: " + str(summary[3])
+		if (len(summary) > 0):
+			summary = summary[0]
+	if (len(summary) > 0):
+		return "Ticker: " + str(summary[0]) + " Bid: " + str(summary[1]) + " Ask: " + str(summary[3])
+	else:
+		return ""
 
 def getOptionData(ticker: str):
 	toreturn = ""
@@ -43,10 +47,28 @@ def getOptionData(ticker: str):
 			#print("Currently trading options for %s" % ticker)
 			#print(e_opt)
 		lookup_conn.remove_listener(lookup_listener)
-		toreturn = str(e_opt)
+		j = 0
+		for i in e_opt['c'][:10]:
+			j = j + 1
+			print(j)
+			toreturn = toreturn + getStockData(i, .5) + "<br>"
+
 	return toreturn
 
-#def getFuturesData(ticker: str):
+def getFuturesData(ticker: str):
+	lookup_conn = iq.LookupConn(name="pyiqfeed-Example-Futures-Chain")
+	lookup_listener = iq.VerboseIQFeedListener("FuturesChainLookupListener")
+	lookup_conn.add_listener(lookup_listener)
+	with iq.ConnConnector([lookup_conn]) as connector:
+		f_syms = lookup_conn.request_futures_chain(
+			symbol=ticker,
+			month_codes="".join(iq.LookupConn.futures_month_letters),
+			years="67",
+			near_months=None,
+			timeout=None)
+		print("Futures symbols with underlying %s" % ticker)
+		print(f_syms)
+		lookup_conn.remove_listener(lookup_listener)
 
 def getTestData(ticker: str, tickertype: str):
 	return "Ticker: " + ticker + "<br>" + "Ticker type: " + tickertype
@@ -63,6 +85,7 @@ def getData():
 	 		return "Return<br>" + summary
 	 	elif (tickertype == "Options"):
 	 		data = getOptionData(ticker)
+	 		return data
 	 	elif (tickertype == "Futures"):
 	 		data = ""
 	 	elif (tickertype == "Test"):
