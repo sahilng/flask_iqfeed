@@ -7,7 +7,7 @@ import numpy as np
 
 app = Flask(__name__)
 
-def getStockData(ticker: str, seconds: int):
+def getQuoteData(ticker: str):
 	"""Get level 1 quotes and trades for ticker for seconds seconds."""
 	fundamentals = ""
 	quote_conn = iq.QuoteConn(name="pyiqfeed-Example-lvl1")
@@ -17,18 +17,26 @@ def getStockData(ticker: str, seconds: int):
 		all_fields = sorted(list(iq.QuoteConn.quote_msg_map.keys()))
 		quote_conn.select_update_fieldnames(["Bid", "Bid Time", "Ask", "Ask Time"])
 		quote_conn.watch(ticker)
-		time.sleep(seconds)
+		t_end = time.time() + 5*60
+		while time.time() < t_end:
+			fundamentals = quote_conn.fundamentals
+			summary = quote_conn.summary
+			if (fundamentals != "" and summary != ""):
+				break
 		quote_conn.unwatch(ticker)
-		fundamentals = quote_conn.fundamentals
-		summary = quote_conn.summary
-		print(summary)
 		quote_conn.remove_listener(quote_listener)
 		if (len(summary) > 0):
 			summary = summary[0]
 	if (len(summary) > 0):
-		return "Ticker: " + str(summary[0]) + " Bid: " + str(summary[1]) + " Ask: " + str(summary[3])
+		return fundamentals, summary[0]
 	else:
 		return ""
+
+
+def getStockData(ticker: str):
+	fundamentals, summary = getQuoteData(ticker)
+	return "Summary: " + len(summary[0])
+
 
 def getOptionData(ticker: str):
 	toreturn = ""
@@ -47,11 +55,9 @@ def getOptionData(ticker: str):
 			#print("Currently trading options for %s" % ticker)
 			#print(e_opt)
 		lookup_conn.remove_listener(lookup_listener)
-		j = 0
 		for i in e_opt['c'][:10]:
-			j = j + 1
-			print(j)
-			toreturn = toreturn + getStockData(i, .5) + "<br>"
+			fundamentals, summary = getQuoteData(i)
+			toreturn = toreturn + str(summary)
 
 	return toreturn
 
@@ -77,12 +83,12 @@ def getTestData(ticker: str, tickertype: str):
 @app.route('/getdata', methods=['GET', 'POST'])
 def getData():
 	if request.method == 'POST':
-	 	ticker = request.form['ticker']
+	 	ticker = request.form['ticker'].upper()
 	 	tickertype = request.form['tickertype']
 
 	 	if (tickertype == "Stocks"):
-	 		summary = getStockData(ticker,.5)
-	 		return "Return<br>" + summary
+	 		data = getStockData(ticker)
+	 		return data
 	 	elif (tickertype == "Options"):
 	 		data = getOptionData(ticker)
 	 		return data

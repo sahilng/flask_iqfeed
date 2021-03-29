@@ -1,9 +1,10 @@
 #control{
 	margin-top: 10%;
+	text-align: center;
 }
 
-#controlform{
-	text-align: center;
+#text{
+	padding-bottom: 15px;
 }
 
 #ticker{
